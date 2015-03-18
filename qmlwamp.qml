@@ -1,9 +1,3 @@
-/*
-** wamp client for qml
-** https://github.com/undwad/qmlwamp mailto:undwad@mail.ru
-** see copyright notice in ./LICENCE
-*/
-
 import QtQuick 2.4
 import QtQuick.Controls 1.3
 import QtQuick.Window 2.2
@@ -14,6 +8,25 @@ Window
 {
     width: 640
     height: 480
+
+    WampSocket
+    {
+        active: true
+        log: true
+        //url: 'ws://192.168.10.72:22222/ws'
+        url: 'ws://192.168.10.26:8080/ws'
+        realm: 'integra-s'
+        clientIsPublisher: true
+        clientIsSubscriber: true
+        clientIsCaller: true
+        clientIsCallee: true
+
+        onErrorStringChanged: print('ERROR', errorString)
+        onStatusChanged: print('STATUS', status)
+
+        onWelcome: pprint('welcome', sessionId, details, serverIsBroker, serverIsDealer)
+    }
+
 
 
 
