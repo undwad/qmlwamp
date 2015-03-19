@@ -15,13 +15,14 @@ ApplicationWindow
     {
         id: _ws
         log: true
-        url: 'ws://echo.websocket.org'
-        //url: 'ws://192.168.10.26:8080/ws'
+        url: 'ws://192.168.10.26:8080/ws'
         realm: 'integra-s'
-        clientIsPublisher: true
-        clientIsSubscriber: true
-        clientIsCaller: true
-        clientIsCallee: true
+        username: 'admin'
+        password: 'admin'
+
+        onWelcome: pprint(details)
+        onClosed: print('CLOSED')
+
 
         Component.onCompleted: open()
     }
@@ -35,4 +36,5 @@ ApplicationWindow
 
     }
 
+    function pprint() { print(Array.prototype.slice.call(arguments).map(JSON.stringify)) }
 }

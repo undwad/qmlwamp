@@ -5,16 +5,17 @@
 #include <QThread>
 #include <QQuickItem>
 #include <QSharedPointer>
+#include <QDebug>
 
 #include "easywsclient.hpp"
 
-class WebSocketWorker : public QThread
+class WebSocketWorker : public QObject
 {
     Q_OBJECT
 
 signals:
     void toPoll();
-    void stateChanged(easywsclient::WebSocket::readyStateValues state);
+    void stateChanged(int state);
     void message(const QString& msg);
 
 public slots:
@@ -27,7 +28,12 @@ public slots:
 
     void ping() { _ws->sendPing(); }
 
-    void send(const QString& msg) { _ws->send(msg.toStdString()); }
+    void send(const QString& msg)
+    {
+        qDebug() << "send begin";
+        _ws->send(msg.toStdString());
+        qDebug() << "send end";
+    }
 
     void close() { _ws->close(); }
 
@@ -82,23 +88,25 @@ signals:
     void message(const QString& text);
 
 public:
-    WebSocketClient(QQuickItem *parent = 0) : QObject(parent)
+    WebSocketClient(QQuickItem *parent = 0) : QObject(parent), _worker(new WebSocketWorker)
     {
-        connect(&_worker, &WebSocketWorker::stateChanged, this, &WebSocketClient::onStateChanged);
-        connect(&_worker, &WebSocketWorker::message, this, &WebSocketClient::onMessage);
-        connect(this, &WebSocketClient::toOpen, &_worker, &WebSocketWorker::open);
-        connect(this, &WebSocketClient::toPing, &_worker, &WebSocketWorker::ping);
-        connect(this, &WebSocketClient::toSend, &_worker, &WebSocketWorker::send);
-        connect(this, &WebSocketClient::toClose, &_worker, &WebSocketWorker::close);
-        _worker.start();
+        _worker->moveToThread(&_thread);
+        connect(&_thread, &QThread::finished, _worker, &QObject::deleteLater);
+        connect(_worker, &WebSocketWorker::stateChanged, this, &WebSocketClient::onStateChanged);
+        connect(_worker, &WebSocketWorker::message, this, &WebSocketClient::onMessage);
+        connect(this, &WebSocketClient::toOpen, _worker, &WebSocketWorker::open);
+        connect(this, &WebSocketClient::toPing, _worker, &WebSocketWorker::ping);
+        connect(this, &WebSocketClient::toSend, _worker, &WebSocketWorker::send);
+        connect(this, &WebSocketClient::toClose, _worker, &WebSocketWorker::close);
+        _thread.start();
     }
 
     ReadyState state() const { return _state; }
 
     ~WebSocketClient()
     {
-        _worker.quit();
-        _worker.wait();
+        _thread.quit();
+        _thread.wait();
     }
 
 public slots:
@@ -108,16 +116,16 @@ public slots:
     void close() { emit toClose(); }
 
 private slots:
-    void onStateChanged(easywsclient::WebSocket::readyStateValues state)
+    void onStateChanged(int state)
     {
-        _state = (ReadyState)state;
-        emit stateChanged(_state);
+        if((ReadyState)state != _state) emit stateChanged(_state = (ReadyState)state);
     }
 
     void onMessage(const QString& msg) { emit message(msg); }
 
 private:
-    WebSocketWorker _worker;
+    WebSocketWorker* _worker;
+    QThread _thread;
     QString _url;
     QString _origin;
     QString _extensions;

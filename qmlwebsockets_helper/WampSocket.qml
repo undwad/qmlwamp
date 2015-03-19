@@ -16,19 +16,23 @@ Item
 
     property string realm
 
-    property bool clientIsPublisher
-    property bool clientIsSubscriber
-    property bool clientIsCaller
-    property bool clientIsCallee
+    property var clientRoles:
+    ({
+         publisher: {},
+         subscriber: {},
+         caller: {},
+         callee: {},
+    })
+
+    property string username
+    property string password
 
     property string sessionId
-    property bool serverIsBroker
-    property bool serverIsDealer
+    property var serverRoles
 
-    signal connected()
-    signal welcome(string sessionId, var details)
-    signal abort()
-    signal disconnected()
+    signal welcome(var sessionId, var details)
+    signal abort(var details, var reason)
+    signal closed()
 
     WebSocketClient
     {
@@ -61,7 +65,7 @@ Item
         property int _INTERRUPT: 69
         property int _YIELD: 70
 
-        function send()
+        function send_()
         {
             var msg = JSON.stringify(Array.prototype.slice.call(arguments))
             if(log) print('<<<', msg)
@@ -73,35 +77,14 @@ Item
             print('WS', ['CLOSING', 'CLOSED', 'CONNECTING', 'OPEN'][state])
             switch(state)
             {
-            case WebSocketClient.OPEN:
-            {
-                send
-                (
-                    _HELLO,
-                    realm,
-                    {
-                        roles:
-                        {
-                            publisher: clientIsPublisher ? {} : undefined,
-                            subscriber: clientIsSubscriber ? {} : undefined,
-                            caller: clientIsCaller ? {} : undefined,
-                            callee: clientIsCallee ? {} : undefined,
-                        }
-                    }
-                )
-                break;
-            }
-            case WebSocketClient.CLOSED:
-            {
-                _.disconnected()
-                break;
-            }
+            case WebSocketClient.OPEN: send_(_HELLO, realm, { roles: clientRoles }); break;
+            case WebSocketClient.CLOSED: closed(); break;
             }
         }
 
         onMessage:
         {
-            //if(log) print('>>>', text)
+            if(log) print('>>>', text)
             var msg = JSON.parse(text)
             switch(msg[0])
             {
@@ -109,8 +92,7 @@ Item
                 {
                     sessionId = msg[1]
                     var details = msg[2]
-                    serverIsBroker = 'broker' in details.roles
-                    serverIsDealer = 'dealer' in details.roles
+                    serverRoles = details.roles
                     welcome(sessionId, details)
                     break;
                 }
@@ -120,6 +102,7 @@ Item
                 }
                 case _CHALLENGE:
                 {
+                    send_(_AUTHENTICATE, username + ':' + password, {})
                     break;
                 }
                 case _GOODBYE:
