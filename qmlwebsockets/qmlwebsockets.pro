@@ -8,10 +8,14 @@ uri = qmlwebsockets
 
 # Input
 SOURCES += \
-    qmlwebsockets_plugin.cpp
+    qmlwebsockets_plugin.cpp \
+    easywsclient.cpp
 
 HEADERS += \
-    qmlwebsockets_plugin.h
+    qmlwebsockets_plugin.h \
+    easywsclient.hpp \
+    stdint.h \
+    websocketclient.h
 
 DISTFILES = qmldir \
     qmlwebsockets.pro.user

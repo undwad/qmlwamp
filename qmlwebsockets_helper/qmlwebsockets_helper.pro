@@ -14,5 +14,4 @@ QML_IMPORT_PATH =
 include(deployment.pri)
 
 HEADERS += \
-    websocketclient.h \
-    easywsclient.hpp
+    websocketclient.h
