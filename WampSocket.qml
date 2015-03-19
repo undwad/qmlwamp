@@ -30,8 +30,10 @@ Item
     property string sessionId
     property var serverRoles
 
-    signal welcome(var sessionId, var details)
-    signal abort(var details, var reason)
+    signal welcome(var params)
+    signal abort(var params)
+    signal goodbye(var params)
+    signal error(var params)
     signal closed()
 
     WebSocketClient
@@ -93,23 +95,17 @@ Item
                     sessionId = msg[1]
                     var details = msg[2]
                     serverRoles = details.roles
-                    welcome(sessionId, details)
+                    welcome({ id: sessionId, details: details })
                     break;
                 }
-                case _ABORT: abort(msg[1], msg[2]); break;
+                case _ABORT: abort({ details: msg[1], reason: msg[2] }); break;
                 case _CHALLENGE:
                 {
                     send_(_AUTHENTICATE, username + ':' + password, {})
                     break;
                 }
-                case _GOODBYE:
-                {
-                    break;
-                }
-                case _ERROR:
-                {
-                    break;
-                }
+                case _GOODBYE: goodbye({ details: msg[1], reason: msg[2] }); break;
+                case _ERROR: error({ type: msg[1], id: msg[2], details: msg[3], error: msg[4], args: msg[5], kwargs: msg[6] }); break;
                 case _PUBLISHED:
                 {
                     break;

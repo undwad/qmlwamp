@@ -14,13 +14,15 @@ Window
     {
         id: _ws
         log: true
-        //url: 'ws://192.168.10.26:8080/ws'
-        url: 'ws://192.168.10.84:8080/ws'
+        url: 'ws://192.168.10.26:8080/ws'
         realm: 'integra-s'
         username: 'admin'
         password: 'admin'
 
-        onWelcome: pprint(details)
+        onWelcome: pprint(params)
+        onAbort: pprint(params)
+        onGoodbye: pprint(params)
+        onError: pprint(params)
         onClosed: print('CLOSED')
 
 
