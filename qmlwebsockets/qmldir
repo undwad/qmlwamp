@@ -1,0 +1,3 @@
+module qmlwebsockets
+plugin qmlwebsockets
+

@@ -5,32 +5,36 @@
 */
 
 import QtQuick 2.4
-import Qt.WebSockets 1.0
+import qmlwebsockets 1.0
 
 Item
 {
+    id: _
     property bool log
-    property alias active: _ws.active
-    property alias errorString: _ws.errorString
-    property alias status: _ws.status
-    property string sessionId
-
     property alias url: _ws.url
+    property alias origin: _ws.origin
+
     property string realm
-    property bool serverIsBroker
-    property bool serverIsDealer
 
     property bool clientIsPublisher
     property bool clientIsSubscriber
     property bool clientIsCaller
     property bool clientIsCallee
 
+    property string sessionId
+    property bool serverIsBroker
+    property bool serverIsDealer
+
+    signal connected()
     signal welcome(string sessionId, var details)
     signal abort()
+    signal disconnected()
 
-    WebSocket
+    WebSocketClient
     {
         id: _ws
+
+        protocol: 'wamp.2.json'
 
         property int _HELLO: 1
         property int _WELCOME: 2
@@ -61,12 +65,16 @@ Item
         {
             var msg = JSON.stringify(Array.prototype.slice.call(arguments))
             if(log) print('<<<', msg)
-            sendTextMessage(msg)
+            send(msg)
         }
 
-        onStatusChanged:
+        onStateChanged:
         {
-            if(WebSocket.Open === status)
+            print('WS', ['CLOSING', 'CLOSED', 'CONNECTING', 'OPEN'][state])
+            switch(state)
+            {
+            case WebSocketClient.OPEN:
+            {
                 send
                 (
                     _HELLO,
@@ -81,12 +89,20 @@ Item
                         }
                     }
                 )
+                break;
+            }
+            case WebSocketClient.CLOSED:
+            {
+                _.disconnected()
+                break;
+            }
+            }
         }
 
-        onTextMessageReceived:
+        onMessage:
         {
-            if(log) print('>>>', message)
-            var msg = JSON.parse(message)
+            //if(log) print('>>>', text)
+            var msg = JSON.parse(text)
             switch(msg[0])
             {
                 case _WELCOME:
@@ -153,6 +169,11 @@ Item
             }
         }
     }
+
+    function open() { _ws.open() }
+    function ping() { _ws.ping() }
+    function send(text) { _ws.send(text) }
+    function close() { _ws.close() }
 
     function pprint() { print(Array.prototype.slice.call(arguments).map(JSON.stringify)) }
 }
