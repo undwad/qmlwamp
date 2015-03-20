@@ -67,7 +67,12 @@ Item
         property int _INTERRUPT: 69
         property int _YIELD: 70
 
-        function send_()
+        property int requestId: 0
+        property var requests: ([])
+        property var subscriptions: ([])
+        property var onevents: ([])
+
+        function sendArgs()
         {
             var msg = JSON.stringify(Array.prototype.slice.call(arguments))
             if(log) print('<<<', msg)
@@ -81,7 +86,7 @@ Item
             print('WS', ['CLOSING', 'CLOSED', 'CONNECTING', 'INITIALIZING', 'OPEN'][state])
             switch(state)
             {
-            case WebSocketClient.OPEN: send_(_HELLO, realm, { roles: clientRoles }); break;
+            case WebSocketClient.OPEN: sendArgs(_HELLO, realm, { roles: clientRoles }); break;
             case WebSocketClient.CLOSED: closed(); break;
             }
         }
@@ -105,25 +110,62 @@ Item
                 case _ABORT: abort({ details: msg[1], reason: msg[2] }); break;
                 case _CHALLENGE:
                 {
-                    send_(_AUTHENTICATE, username + ':' + password, {})
+                    sendArgs(_AUTHENTICATE, username + ':' + password, {})
                     break;
                 }
                 case _GOODBYE: goodbye({ details: msg[1], reason: msg[2] }); break;
-                case _ERROR: error({ type: msg[1], id: msg[2], details: msg[3], error: msg[4], args: msg[5], kwargs: msg[6] }); break;
-                case _PUBLISHED:
+                case _ERROR:
                 {
-                    break;
+                    var type = msg[1]
+                    var requestId = msg[2]
+                    var details = msg[3]
+                    var error = msg[4]
+                    var args = msg[5]
+                    var kwargs = msg[6]
+                    if(requestId in requests)
+                    {
+                        var onerror = requests[requestId].onerror
+                        requests[requestId] = null
+                        if(onerror) onerror({ details: details, error: error, args: args, kwargs: kwargs })
+                    }
+                    break
                 }
                 case _SUBSCRIBED:
                 {
+                    var requestId = msg[1]
+                    var subscriptionId = msg[2]
+                    if(requestId in requests)
+                    {
+                        var request = requests[requestId]
+                        subscriptions[request.topic] = subscriptionId
+                        onevents[subscriptionId] = request.onevent
+                        var onsuccess = request.onsuccess
+                        requests[requestId] = null
+                        if(onsuccess) onsuccess()
+                    }
                     break;
                 }
+                case _PUBLISHED:
                 case _UNSUBSCRIBED:
                 {
+                    var requestId = msg[1]
+                    var details = msg[2]
+                    if(requestId in requests)
+                    {
+                        var onsuccess = requests[requestId].onsuccess
+                        requests[requestId] = null
+                        if(onsuccess) onsuccess(details)
+                    }
                     break;
                 }
                 case _EVENT:
                 {
+                    var subscriptionId = msg[1]
+                    var publicationId = msg[2]
+                    var details = msg[3]
+                    var args = msg[4]
+                    var kwargs = msg[5]
+                    if(subscriptionId in onevents) onevents[subscriptionId](publicationId, details, args, kwargs)
                     break;
                 }
                 case _RESULT:
@@ -148,12 +190,40 @@ Item
                 }
             }
         }
+
+        function subscribe(options, topic, onevent, onsuccess, onerror)
+        {
+            requestId++
+            requests[requestId] = { topic: topic, onevent: onevent, onsuccess: onsuccess, onerror: onerror }
+            sendArgs(_SUBSCRIBE, requestId, options, topic)
+        }
+
+        function unsubscribe(topic, onsuccess, onerror)
+        {
+            if(topic in subscriptions)
+            {
+                var subscriptionId = subscriptions[topic]
+                onevents[subscriptionId] = subscriptions[topic] = null
+                requestId++
+                requests[requestId] = { onsuccess: onsuccess, onerror: onerror }
+                sendArgs(_UNSUBSCRIBE, requestId, subscriptionId)
+            }
+        }
+
+        function publish(options, topic, args, kwargs, onsuccess, onerror)
+        {
+            requestId++
+            requests[requestId] = { onsuccess: onsuccess, onerror: onerror }
+            sendArgs(_PUBLISH, requestId, options, topic, args, kwargs)
+        }
     }
 
     function open() { _ws.open() }
     function ping() { _ws.ping() }
-    function send(text) { _ws.send(text) }
     function close() { _ws.close() }
+    function subscribe(options, topic, onevent, onsuccess, onerror) { _ws.subscribe(options, topic, onevent, onsuccess, onerror) }
+    function unsubscribe(topic, onsuccess, onerror) { _ws.unsubscribe(topic, onsuccess, onerror) }
+    function publish(options, topic, args, kwargs, onsuccess, onerror) { _ws.publish(options, topic, args, kwargs, onsuccess, onerror) }
 
     function pprint() { print(Array.prototype.slice.call(arguments).map(JSON.stringify)) }
 }

@@ -56,7 +56,7 @@ signals:
 public slots:
     void open(const QString& url, const QString& origin, const QString& extensions, const QString& protocol, bool mask, bool ignoreSslErrors)
     {
-        close();
+        socket().abort();
 
         _mask = mask;
         _ignoreSslErrors = ignoreSslErrors;

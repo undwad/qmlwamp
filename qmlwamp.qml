@@ -26,16 +26,58 @@ Window
         onError: pprint('ERROR', params)
         onClosed: print('CLOSED')
 
-
         Component.onCompleted: open()
     }
 
-    Button
+    Column
     {
-        text: 'CLOSE'
-        anchors.bottom: parent.bottom
         anchors.right: parent.right
-        onClicked: _ws.close()
+        Button { text: 'OPEN'; onClicked: _ws.open() }
+        Button { text: 'PING'; onClicked: _ws.ping() }
+        Row
+        {
+            TextInput { id: _subscription; text: 'subscription' }
+            Button
+            {
+                text: 'SUBSCRIBE'
+                onClicked: _ws.subscribe
+                (
+                    {},
+                    _subscription.text,
+                    pprint.bind(null, text, 'EVENT'),
+                    pprint.bind(null, text, 'SUCCEEDED'),
+                    pprint.bind(null, text, 'FAILED')
+                )
+            }
+            Button
+            {
+                text: 'UNSUBSCRIBE'
+                onClicked: _ws.unsubscribe
+                (
+                    _subscription.text,
+                   pprint.bind(null, text, 'SUCCEEDED'),
+                   pprint.bind(null, text, 'FAILED')
+                )
+            }
+        }
+        Row
+        {
+            TextInput { id: _event; text: 'event' }
+            Button
+            {
+                text: 'PUBLISH'
+                onClicked: _ws.publish
+                (
+                    {},
+                    _subscription.text,
+                    [],
+                    {},
+                    pprint.bind(null, text, 'SUCCEEDED'),
+                    pprint.bind(null, text, 'FAILED')
+                )
+            }
+        }
+        Button { text: 'CLOSE'; onClicked: _ws.close() }
     }
 
     Component.onCompleted:
