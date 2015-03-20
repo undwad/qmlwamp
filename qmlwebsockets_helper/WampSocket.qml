@@ -86,7 +86,9 @@ Item
             }
         }
 
-        onReceived:
+        onHeaderReceived: print(header)
+
+        onMessageReceived:
         {
             if(log) print('>>>', text)
             var msg = JSON.parse(text)
