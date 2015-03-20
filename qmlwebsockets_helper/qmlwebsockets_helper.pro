@@ -2,8 +2,7 @@ TEMPLATE = app
 
 QT += qml quick widgets network
 
-SOURCES += main.cpp \
-    easywsclient.cpp
+SOURCES += main.cpp
 
 RESOURCES += qml.qrc
 
