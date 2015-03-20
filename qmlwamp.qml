@@ -15,7 +15,7 @@ Window
     {
         id: _ws
         log: true
-        url: 'ws://192.168.10.26:8080/ws'
+        url: 'ws://192.168.10.84:8080/ws'
         realm: 'integra-s'
         username: 'admin'
         password: 'admin'
@@ -59,10 +59,6 @@ Window
                    pprint.bind(null, text, 'FAILED')
                 )
             }
-        }
-        Row
-        {
-            TextInput { id: _event; text: 'event' }
             Button
             {
                 text: 'PUBLISH'
@@ -76,6 +72,47 @@ Window
                     pprint.bind(null, text, 'FAILED')
                 )
             }
+        }
+
+        Row
+        {
+            TextInput { id: _procedure; text: 'procedure' }
+            Button
+            {
+                text: 'REGISTER'
+                onClicked: _ws.register
+                (
+                    {},
+                    _procedure.text,
+                    pprint.bind(null, text, 'INVOKE'),
+                    pprint.bind(null, text, 'SUCCEEDED'),
+                    pprint.bind(null, text, 'FAILED')
+                )
+            }
+            Button
+            {
+                text: 'UNREGISTER'
+                onClicked: _ws.unregister
+                (
+                    _procedure.text,
+                   pprint.bind(null, text, 'SUCCEEDED'),
+                   pprint.bind(null, text, 'FAILED')
+                )
+            }
+            Button
+            {
+                text: 'CALL'
+                onClicked: _ws.call
+                (
+                    {},
+                    _procedure.text,
+                    [],
+                    {},
+                    pprint.bind(null, text, 'SUCCEEDED'),
+                    pprint.bind(null, text, 'FAILED')
+                )
+            }
+
         }
         Button { text: 'CLOSE'; onClicked: _ws.close() }
     }

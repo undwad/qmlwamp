@@ -68,9 +68,9 @@ Item
         property int _YIELD: 70
 
         property int requestId: 0
-        property var requests: ([])
-        property var subscriptions: ([])
-        property var onevents: ([])
+        property var requests: ({})
+        property var uris: ({})
+        property var callbacks: ({})
 
         function sendArgs()
         {
@@ -130,57 +130,48 @@ Item
                     }
                     break
                 }
+                case _REGISTERED:
                 case _SUBSCRIBED:
                 {
                     var requestId = msg[1]
-                    var subscriptionId = msg[2]
+                    var actionId = msg[2]
                     if(requestId in requests)
                     {
                         var request = requests[requestId]
-                        subscriptions[request.topic] = subscriptionId
-                        onevents[subscriptionId] = request.onevent
+                        callbacks[actionId] = request.callback
                         var onsuccess = request.onsuccess
                         requests[requestId] = null
-                        if(onsuccess) onsuccess()
+                        if(onsuccess) onsuccess(actionId)
                     }
                     break;
                 }
                 case _PUBLISHED:
                 case _UNSUBSCRIBED:
+                case _UNREGISTERED:
                 {
                     var requestId = msg[1]
-                    var details = msg[2]
+                    var actionId = msg[2]
                     if(requestId in requests)
                     {
                         var onsuccess = requests[requestId].onsuccess
                         requests[requestId] = null
-                        if(onsuccess) onsuccess(details)
+                        if(onsuccess) onsuccess(actionId)
                     }
                     break;
                 }
                 case _EVENT:
+                case _INVOCATION:
                 {
-                    var subscriptionId = msg[1]
-                    var publicationId = msg[2]
+                    var id = msg[1]
+                    var actionId = msg[2]
                     var details = msg[3]
                     var args = msg[4]
                     var kwargs = msg[5]
-                    if(subscriptionId in onevents) onevents[subscriptionId](publicationId, details, args, kwargs)
+                    pprint(actionId, typeof callbacks[actionId])
+                    if(actionId in callbacks) callbacks[actionId]({ id: id, details: details, args: args, kwargs: kwargs })
                     break;
                 }
                 case _RESULT:
-                {
-                    break;
-                }
-                case _REGISTERED:
-                {
-                    break;
-                }
-                case _UNREGISTERED:
-                {
-                    break;
-                }
-                case _INVOCATION:
                 {
                     break;
                 }
@@ -191,39 +182,52 @@ Item
             }
         }
 
-        function subscribe(options, topic, onevent, onsuccess, onerror)
+        function enable(type, options, uri, callback, onsuccess, onerror)
         {
             requestId++
-            requests[requestId] = { topic: topic, onevent: onevent, onsuccess: onsuccess, onerror: onerror }
-            sendArgs(_SUBSCRIBE, requestId, options, topic)
+            requests[requestId] =
+            {
+                callback: callback,
+                onsuccess: function(id)
+                {
+                    uris[uri] = id
+                    if(onsuccess) onsuccess(id)
+                },
+                onerror: onerror
+            }
+            sendArgs(type, requestId, options, uri)
         }
 
-        function unsubscribe(topic, onsuccess, onerror)
+        function disable(type, uri, onsuccess, onerror)
         {
-            if(topic in subscriptions)
+            if(uri in uris)
             {
-                var subscriptionId = subscriptions[topic]
-                onevents[subscriptionId] = subscriptions[topic] = null
+                var id = uris[uri]
+                callbacks[id] = uris[uri] = null
                 requestId++
                 requests[requestId] = { onsuccess: onsuccess, onerror: onerror }
-                sendArgs(_UNSUBSCRIBE, requestId, subscriptionId)
+                sendArgs(type, requestId, id)
             }
         }
 
-        function publish(options, topic, args, kwargs, onsuccess, onerror)
+        function post(type, options, uri, args, kwargs, onsuccess, onerror)
         {
             requestId++
             requests[requestId] = { onsuccess: onsuccess, onerror: onerror }
-            sendArgs(_PUBLISH, requestId, options, topic, args, kwargs)
+            sendArgs(type, requestId, options, uri, args, kwargs)
         }
     }
 
     function open() { _ws.open() }
     function ping() { _ws.ping() }
     function close() { _ws.close() }
-    function subscribe(options, topic, onevent, onsuccess, onerror) { _ws.subscribe(options, topic, onevent, onsuccess, onerror) }
-    function unsubscribe(topic, onsuccess, onerror) { _ws.unsubscribe(topic, onsuccess, onerror) }
-    function publish(options, topic, args, kwargs, onsuccess, onerror) { _ws.publish(options, topic, args, kwargs, onsuccess, onerror) }
+
+    property var subscribe: _ws.enable.bind(_ws, _ws._SUBSCRIBE)
+    property var unsubscribe: _ws.disable.bind(_ws, _ws._UNSUBSCRIBE)
+    property var publish: _ws.post.bind(_ws, _ws._PUBLISH)
+    property var register: _ws.enable.bind(_ws, _ws._REGISTER)
+    property var unregister: _ws.disable.bind(_ws, _ws._UNREGISTER)
+    property var call: _ws.post.bind(_ws, _ws._CALL)
 
     function pprint() { print(Array.prototype.slice.call(arguments).map(JSON.stringify)) }
 }
