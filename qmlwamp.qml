@@ -20,14 +20,22 @@ Window
         username: 'admin'
         password: 'admin'
 
-        onWelcome: pprint(params)
-        onAbort: pprint(params)
-        onGoodbye: pprint(params)
-        onError: pprint(params)
+        onWelcome: pprint('WELCOME', params)
+        onAbort: pprint('ABORT', params)
+        onGoodbye: pprint('GOODBYE', params)
+        onError: pprint('ERROR', params)
         onClosed: print('CLOSED')
 
 
         Component.onCompleted: open()
+    }
+
+    Button
+    {
+        text: 'CLOSE'
+        anchors.bottom: parent.bottom
+        anchors.right: parent.right
+        onClicked: _ws.close()
     }
 
     Component.onCompleted:

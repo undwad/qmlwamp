@@ -101,6 +101,7 @@ public slots:
     void close()
     {
         if (ReadyState::OPEN != _state) return;
+        emit stateChanged(_state = ReadyState::CLOSING);
         quint8 closeFrame[6] = {0x88, 0x80, 0x00, 0x00, 0x00, 0x00};
         std::vector<quint8> buffer(closeFrame, closeFrame+6);
         socket().write((char*)buffer.data(), buffer.size());
