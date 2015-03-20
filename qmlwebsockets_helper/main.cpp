@@ -9,7 +9,6 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
 
     QQmlApplicationEngine engine;
-    qRegisterMetaType<WebSocketReadyState>();
     qmlRegisterType<WebSocketClient>("qmlwebsockets", 1, 0, "WebSocketClient");
     engine.load(QUrl(QStringLiteral("qrc:/qmlwamp.qml")));
 
