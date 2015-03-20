@@ -12,6 +12,8 @@
 #include <QTextStream>
 #include <QDataStream>
 #include <QByteArray>
+#include <QList>
+#include <QSslError>
 #include <QDebug>
 
 #define EMIT_ERROR_AND_RETURN(MESSAGE, DETAILS, RESULT) \
@@ -118,6 +120,7 @@ public:
         connect(&_sslsocket,SIGNAL(error(QAbstractSocket::SocketError)), this, SLOT(error(QAbstractSocket::SocketError)));
         connect(&_sslsocket, &QSslSocket::aboutToClose, this, &WebSocketWorker::aboutToClose);
         connect(&_sslsocket, &QSslSocket::disconnected, this, &WebSocketWorker::disconnected);
+        connect(&_sslsocket, SIGNAL(sslErrors(const QList<QSslError>&)), this, SLOT(sslErrors(const QList<QSslError>&)));
 #       endif
 
     }
@@ -159,11 +162,21 @@ private slots:
         }
         case ReadyState::OPEN:
         {
-
+            qDebug() << socket().readAll();
             break;
         }
         }
     }
+
+#   if !defined(QT_NO_SSL)
+    void sslErrors(const QList<QSslError>& errors)
+    {
+        QString message;
+        QTextStream stream(&message);
+        for(const QSslError& error : errors) stream << error.errorString() << "\r\n";
+        emit socketError(message, "ssl");
+    }
+#   endif
 
     void error(QAbstractSocket::SocketError code) { emit socketError(socket().errorString(), QString(code)); }
     void aboutToClose() { emit stateChanged(_state = ReadyState::CLOSING); }
@@ -190,7 +203,6 @@ private:
 
     void sendData(wsheader_type::opcode_type type, QByteArray data)
     {
-        qDebug() << "WRITE" << data.size();
         const quint8 masking_key[4] = { 0x12, 0x34, 0x56, 0x78 };
 
         if (ReadyState::OPEN != _state) return;
