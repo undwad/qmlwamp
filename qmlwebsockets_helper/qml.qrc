@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/">
-        <file>qmlwamp.qml</file>
-        <file>WampSocket.qml</file>
+        <file>../qmlwamp.qml</file>
+        <file>../WampSocket.qml</file>
     </qresource>
 </RCC>

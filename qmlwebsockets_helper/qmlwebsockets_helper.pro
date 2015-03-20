@@ -2,6 +2,9 @@ TEMPLATE = app
 
 QT += qml quick widgets network
 
+INCLUDEPATH += ./
+INCLUDEPATH += ../qmlwebsockets/
+
 SOURCES += main.cpp
 
 RESOURCES += qml.qrc
@@ -13,4 +16,4 @@ QML_IMPORT_PATH =
 include(deployment.pri)
 
 HEADERS += \
-    websocketclient.h
+    ../qmlwebsockets/websocketclient.h

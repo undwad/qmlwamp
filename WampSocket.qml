@@ -74,9 +74,11 @@ Item
             send(msg)
         }
 
+        onSocketError: error({ message: message, details: details })
+
         onStateChanged:
         {
-            print('WS', ['CLOSING', 'CLOSED', 'CONNECTING', 'OPEN'][state])
+            print('WS', ['CLOSING', 'CLOSED', 'CONNECTING', 'INITIALIZING', 'OPEN'][state])
             switch(state)
             {
             case WebSocketClient.OPEN: send_(_HELLO, realm, { roles: clientRoles }); break;
@@ -84,7 +86,9 @@ Item
             }
         }
 
-        onMessage:
+        onHeaderReceived: print(header)
+
+        onMessageReceived:
         {
             if(log) print('>>>', text)
             var msg = JSON.parse(text)
