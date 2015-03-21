@@ -71,10 +71,11 @@ Item
         property var requests: ({})
         property var uris: ({})
         property var callbacks: ({})
+        property var results: ({})
 
         function sendArgs()
         {
-            var msg = JSON.stringify(Array.prototype.slice.call(arguments))
+            var msg = JSON.stringify(Array.prototype.slice.call(arguments).filter(function(arg) { return arg }))
             if(log) print('<<<', msg)
             send(msg)
         }
@@ -119,6 +120,7 @@ Item
                     var error = msg[4]
                     var args = msg[5]
                     var kwargs = msg[6]
+                    results[requestId] = null
                     if(requestId in requests)
                     {
                         var onerror = requests[requestId].onerror
@@ -167,6 +169,22 @@ Item
                 }
                 case _RESULT:
                 {
+                    var resultId = msg[1]
+                    var details = msg[2]
+                    var args = msg[3]
+                    var kwargs = msg[4]
+                    requests[resultId] = null
+                    if(resultId in results)
+                    {
+                        var result = results[resultId]
+                        results[resultId] = null
+                        if(result) result
+                        ({
+                             details: details,
+                             args: args,
+                             kwargs: kwargs,
+                         })
+                    }
                     break;
                 }
                 case _INTERRUPT:
@@ -202,10 +220,17 @@ Item
             }
         }
 
-        function post(type, uri, options, args, kwargs, onsuccess, onerror)
+        function publish(uri, options, args, kwargs, onsuccess, onerror)
         {
             requests[++requestId] = { onsuccess: onsuccess, onerror: onerror }
-            sendArgs(type, requestId, options, uri, args, kwargs)
+            sendArgs(_PUBLISH, requestId, options, uri, args, kwargs)
+        }
+
+        function call(uri, options, args, kwargs, callback, onerror)
+        {
+            requests[++requestId] = { onerror: onerror }
+            results[requestId] = callback
+            sendArgs(_ws._CALL, requestId, options, uri, args, kwargs)
         }
     }
 
@@ -217,8 +242,8 @@ Item
     property var register: _ws.enable.bind(_ws, _ws._REGISTER)
     property var unsubscribe: _ws.disable.bind(_ws, _ws._UNSUBSCRIBE)
     property var unregister: _ws.disable.bind(_ws, _ws._UNREGISTER)
-    property var publish: _ws.post.bind(_ws, _ws._PUBLISH)
-    property var call: _ws.post.bind(_ws, _ws._CALL)
+    property var publish: _ws.publish
+    property var call: _ws.call
 
     function pprint() { print(Array.prototype.slice.call(arguments).map(JSON.stringify)) }
 }

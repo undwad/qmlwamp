@@ -87,7 +87,7 @@ Window
                     function(params)
                     {
                         pprint(text, 'INVOKE', params)
-                        params.yield(params.options, params.args, params.kwargs)
+                        params.yield({}, params.args, params.kwargs)
                     },
                     pprint.bind(null, text, 'SUCCEEDED'),
                     pprint.bind(null, text, 'FAILED')
@@ -110,9 +110,9 @@ Window
                 (
                     _procedure.text,
                     {},
-                    [],
-                    {},
-                    pprint.bind(null, text, 'SUCCEEDED'),
+                    [1,2,3],
+                    {param1: true, param2: 'joder'},
+                    pprint.bind(null, text, 'RESULT'),
                     pprint.bind(null, text, 'FAILED')
                 )
             }
