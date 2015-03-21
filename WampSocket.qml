@@ -28,7 +28,7 @@ Item
     property var serverRoles
 
     signal header(var header)
-    signal challenge(var header)
+    signal challenge(var params)
     signal welcome(var params)
     signal abort(var params)
     signal goodbye(var params)

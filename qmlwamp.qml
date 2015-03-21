@@ -21,7 +21,11 @@ Window
         property string password: 'admin'
 
         onHeader: print('HEADER', header)
-        onChallenge: authenticate(username + ':' + password)
+        onChallenge:
+        {
+            pprint('CHALLENGE', params)
+            authenticate(username + ':' + password)
+        }
         onWelcome: pprint('WELCOME', params)
         onAbort: pprint('ABORT', params)
         onGoodbye: pprint('GOODBYE', params)
