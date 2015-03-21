@@ -42,8 +42,8 @@ Window
                 text: 'SUBSCRIBE'
                 onClicked: _ws.subscribe
                 (
-                    {},
                     _subscription.text,
+                    {},
                     pprint.bind(null, text, 'EVENT'),
                     pprint.bind(null, text, 'SUCCEEDED'),
                     pprint.bind(null, text, 'FAILED')
@@ -64,8 +64,8 @@ Window
                 text: 'PUBLISH'
                 onClicked: _ws.publish
                 (
-                    {},
                     _subscription.text,
+                    {},
                     [],
                     {},
                     pprint.bind(null, text, 'SUCCEEDED'),
@@ -82,9 +82,13 @@ Window
                 text: 'REGISTER'
                 onClicked: _ws.register
                 (
-                    {},
                     _procedure.text,
-                    pprint.bind(null, text, 'INVOKE'),
+                    {},
+                    function(params)
+                    {
+                        pprint(text, 'INVOKE', params)
+                        params.yield(params.options, params.args, params.kwargs)
+                    },
                     pprint.bind(null, text, 'SUCCEEDED'),
                     pprint.bind(null, text, 'FAILED')
                 )
@@ -104,8 +108,8 @@ Window
                 text: 'CALL'
                 onClicked: _ws.call
                 (
-                    {},
                     _procedure.text,
+                    {},
                     [],
                     {},
                     pprint.bind(null, text, 'SUCCEEDED'),
@@ -115,6 +119,7 @@ Window
 
         }
         Button { text: 'CLOSE'; onClicked: _ws.close() }
+        Button { text: 'ABORT'; onClicked: _ws.abort() }
     }
 
     Component.onCompleted:

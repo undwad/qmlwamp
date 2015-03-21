@@ -97,7 +97,8 @@ Item
         {
             if(log) print('>>>', text)
             var msg = JSON.parse(text)
-            switch(msg[0])
+            var code = msg[0]
+            switch(code)
             {
                 case _WELCOME:
                 {
@@ -108,11 +109,7 @@ Item
                     break;
                 }
                 case _ABORT: abort({ details: msg[1], reason: msg[2] }); break;
-                case _CHALLENGE:
-                {
-                    sendArgs(_AUTHENTICATE, username + ':' + password, {})
-                    break;
-                }
+                case _CHALLENGE: sendArgs(_AUTHENTICATE, username + ':' + password, {}); break;
                 case _GOODBYE: goodbye({ details: msg[1], reason: msg[2] }); break;
                 case _ERROR:
                 {
@@ -132,43 +129,40 @@ Item
                 }
                 case _REGISTERED:
                 case _SUBSCRIBED:
-                {
-                    var requestId = msg[1]
-                    var actionId = msg[2]
-                    if(requestId in requests)
-                    {
-                        var request = requests[requestId]
-                        callbacks[actionId] = request.callback
-                        var onsuccess = request.onsuccess
-                        requests[requestId] = null
-                        if(onsuccess) onsuccess(actionId)
-                    }
-                    break;
-                }
                 case _PUBLISHED:
                 case _UNSUBSCRIBED:
                 case _UNREGISTERED:
                 {
                     var requestId = msg[1]
-                    var actionId = msg[2]
+                    var callbackId = msg[2]
                     if(requestId in requests)
                     {
-                        var onsuccess = requests[requestId].onsuccess
+                        var request = requests[requestId]
+                        callbacks[callbackId] = request.callback
+                        var onsuccess = request.onsuccess
                         requests[requestId] = null
-                        if(onsuccess) onsuccess(actionId)
+                        if(onsuccess) onsuccess(callbackId)
                     }
                     break;
                 }
                 case _EVENT:
                 case _INVOCATION:
                 {
-                    var id = msg[1]
-                    var actionId = msg[2]
+                    var callbackId = msg[1]
+                    var responseId = msg[2]
                     var details = msg[3]
                     var args = msg[4]
                     var kwargs = msg[5]
-                    pprint(actionId, typeof callbacks[actionId])
-                    if(actionId in callbacks) callbacks[actionId]({ id: id, details: details, args: args, kwargs: kwargs })
+                    if(_INVOCATION === code) var temp = callbackId, callbackId = responseId, responseId = temp
+                    if(callbackId in callbacks)
+                        callbacks[callbackId]
+                        ({
+                             id: responseId,
+                             details: details,
+                             args: args,
+                             kwargs: kwargs,
+                             yield: _INVOCATION === code ? sendArgs.bind(_ws, _YIELD, responseId) : null
+                         })
                     break;
                 }
                 case _RESULT:
@@ -182,16 +176,15 @@ Item
             }
         }
 
-        function enable(type, options, uri, callback, onsuccess, onerror)
+        function enable(type, uri, options, callback, onsuccess, onerror)
         {
-            requestId++
-            requests[requestId] =
+            requests[++requestId] =
             {
                 callback: callback,
-                onsuccess: function(id)
+                onsuccess: function(callbackId)
                 {
-                    uris[uri] = id
-                    if(onsuccess) onsuccess(id)
+                    uris[uri] = callbackId
+                    if(onsuccess) onsuccess(callbackId)
                 },
                 onerror: onerror
             }
@@ -202,31 +195,29 @@ Item
         {
             if(uri in uris)
             {
-                var id = uris[uri]
-                callbacks[id] = uris[uri] = null
-                requestId++
-                requests[requestId] = { onsuccess: onsuccess, onerror: onerror }
-                sendArgs(type, requestId, id)
+                var callbackId = uris[uri]
+                callbacks[callbackId] = uris[uri] = null
+                requests[++requestId] = { onsuccess: onsuccess, onerror: onerror }
+                sendArgs(type, requestId, callbackId)
             }
         }
 
-        function post(type, options, uri, args, kwargs, onsuccess, onerror)
+        function post(type, uri, options, args, kwargs, onsuccess, onerror)
         {
-            requestId++
-            requests[requestId] = { onsuccess: onsuccess, onerror: onerror }
+            requests[++requestId] = { onsuccess: onsuccess, onerror: onerror }
             sendArgs(type, requestId, options, uri, args, kwargs)
         }
     }
 
-    function open() { _ws.open() }
-    function ping() { _ws.ping() }
-    function close() { _ws.close() }
-
+    property var open: _ws.open
+    property var ping: _ws.ping
+    property var close: _ws.close
+    property var abort: _ws.abort
     property var subscribe: _ws.enable.bind(_ws, _ws._SUBSCRIBE)
-    property var unsubscribe: _ws.disable.bind(_ws, _ws._UNSUBSCRIBE)
-    property var publish: _ws.post.bind(_ws, _ws._PUBLISH)
     property var register: _ws.enable.bind(_ws, _ws._REGISTER)
+    property var unsubscribe: _ws.disable.bind(_ws, _ws._UNSUBSCRIBE)
     property var unregister: _ws.disable.bind(_ws, _ws._UNREGISTER)
+    property var publish: _ws.post.bind(_ws, _ws._PUBLISH)
     property var call: _ws.post.bind(_ws, _ws._CALL)
 
     function pprint() { print(Array.prototype.slice.call(arguments).map(JSON.stringify)) }
