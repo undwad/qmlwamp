@@ -10,7 +10,7 @@ import qmlwebsockets 1.0
 Item
 {
     id: _
-    property bool log
+    property bool dump
     property alias url: _ws.url
     property alias origin: _ws.origin
 
@@ -76,7 +76,7 @@ Item
         function sendArgs()
         {
             var msg = JSON.stringify(Array.prototype.slice.call(arguments).filter(function(arg) { return arg }))
-            if(log) print('<<<', msg)
+            if(dump) print('<<<', msg)
             send(msg)
         }
 
@@ -84,7 +84,7 @@ Item
 
         onStateChanged:
         {
-            if(log) print('WS', ['CLOSING', 'CLOSED', 'CONNECTING', 'INITIALIZING', 'OPEN'][state])
+            if(dump) print('^^^', ['CLOSING', 'CLOSED', 'CONNECTING', 'INITIALIZING', 'OPEN'][state])
             switch(state)
             {
             case WebSocketClient.OPEN: sendArgs(_HELLO, realm, { roles: clientRoles }); break;
@@ -96,7 +96,7 @@ Item
 
         onMessageReceived:
         {
-            if(log) print('>>>', text)
+            if(dump) print('>>>', text)
             var msg = JSON.parse(text)
             var code = msg[0]
             switch(code)

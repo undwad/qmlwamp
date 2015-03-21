@@ -14,7 +14,7 @@ Window
     WampSocket
     {
         id: _ws
-        log: true
+        dump: true
         url: 'ws://192.168.10.84:8080/ws'
         realm: 'integra-s'
         property string username: 'admin'
