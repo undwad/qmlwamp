@@ -59,13 +59,22 @@ signals:
     void socketError(const QString& message, const QString& details);
 
 public slots:
-    void open(const QString& url, const QString& origin, const QString& extensions, const QString& protocol, bool mask, bool ignoreSslErrors)
+    void open
+    (
+        const QString& url,
+        const QString& key,
+        const QString& origin,
+        const QString& extensions,
+        const QString& protocol,
+        bool mask,
+        bool ignoreSslErrors
+    )
     {
         socket().abort();
 
         _mask = mask;
         _ignoreSslErrors = ignoreSslErrors;
-        _input_header = QString();
+        _output_header = _input_header = QString();
         _input_data.clear();
 
         QUrl url_(url);
@@ -81,7 +90,7 @@ public slots:
             << (origin.isEmpty() ? "" : QString("Origin: %1\r\n").arg(origin))
             << (extensions.isEmpty() ? "" : QString("Sec-WebSocket-Extensions: %1\r\n").arg(extensions))
             << (protocol.isEmpty() ? "" : QString("Sec-WebSocket-Protocol: %1\r\n").arg(protocol))
-            << "Sec-WebSocket-Key: x3JJHMbDL1EzLkh9GBhXDw==\r\n"
+            << "Sec-WebSocket-Key: " << key << "\r\n"
             << "Sec-WebSocket-Version: 13\r\n"
             << "\r\n";
 
@@ -380,6 +389,7 @@ public:
     Q_PROPERTY(QString origin MEMBER _origin)
     Q_PROPERTY(QString extensions MEMBER _extensions)
     Q_PROPERTY(QString protocol MEMBER _protocol)
+    Q_PROPERTY(QString key MEMBER _key)
     Q_PROPERTY(bool mask MEMBER _mask)
     Q_PROPERTY(bool ignoreSslErrors MEMBER _ignoreSslErrors)
     Q_PROPERTY(ReadyState state READ state NOTIFY stateChanged)
@@ -387,7 +397,16 @@ public:
     Q_DISABLE_COPY(WebSocketClient)
 
 signals:
-    void toOpen(const QString& url, const QString& origin, const QString& extensions, const QString& protocol, bool mask, bool ignoreSslErrors);
+    void toOpen
+    (
+        const QString& url,
+        const QString& key,
+        const QString& origin,
+        const QString& extensions,
+        const QString& protocol,
+        bool mask,
+        bool ignoreSslErrors
+    );
     void toPing();
     void toSend(const QString& message);
     void toClose();
@@ -424,7 +443,7 @@ public:
     }
 
 public slots:
-    void open() { emit toOpen(_url, _origin, _extensions, _protocol, _mask, _ignoreSslErrors); }
+    void open() { emit toOpen(_url, _key, _origin, _extensions, _protocol, _mask, _ignoreSslErrors); }
     void ping() { emit toPing(); }
     void send(const QString& text) { emit toSend(text); }
     void close() { emit toClose(); }
@@ -443,6 +462,7 @@ private:
     QString _origin;
     QString _extensions;
     QString _protocol;
+    QString _key;
     bool _mask = true;
     bool _ignoreSslErrors = true;
     ReadyState _state = ReadyState::CLOSED;

@@ -41,6 +41,7 @@ Item
         id: _ws
 
         protocol: 'wamp.2.json'
+        key: 'x3JJHMbDL1EzLkh9GBhXDw=='
 
         property int _HELLO: 1
         property int _WELCOME: 2
