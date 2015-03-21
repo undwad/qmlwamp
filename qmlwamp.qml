@@ -17,10 +17,11 @@ Window
         log: true
         url: 'ws://192.168.10.84:8080/ws'
         realm: 'integra-s'
-        username: 'admin'
-        password: 'admin'
+        property string username: 'admin'
+        property string password: 'admin'
 
         onHeader: print('HEADER', header)
+        onChallenge: authenticate(username + ':' + password)
         onWelcome: pprint('WELCOME', params)
         onAbort: pprint('ABORT', params)
         onGoodbye: pprint('GOODBYE', params)

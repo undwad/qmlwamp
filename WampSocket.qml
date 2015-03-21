@@ -24,13 +24,11 @@ Item
          callee: {},
     })
 
-    property string username
-    property string password
-
     property string sessionId
     property var serverRoles
 
     signal header(var header)
+    signal challenge(var header)
     signal welcome(var params)
     signal abort(var params)
     signal goodbye(var params)
@@ -112,7 +110,7 @@ Item
                     break;
                 }
                 case _ABORT: abort({ details: msg[1], reason: msg[2] }); break;
-                case _CHALLENGE: sendArgs(_AUTHENTICATE, username + ':' + password, {}); break;
+                case _CHALLENGE: challenge({ method: msg[1], extra: msg[2] }); break;
                 case _GOODBYE: goodbye({ details: msg[1], reason: msg[2] }); break;
                 case _ERROR:
                 {
@@ -196,6 +194,8 @@ Item
             }
         }
 
+        function authenticate(signature, extra) { sendArgs(_AUTHENTICATE, signature, extra || {}) }
+
         function enable(type, uri, options, callback, onsuccess, onerror)
         {
             requests[++requestId] =
@@ -209,6 +209,7 @@ Item
                 onerror: onerror
             }
             sendArgs(type, requestId, options, uri)
+            return requestId
         }
 
         function disable(type, uri, onsuccess, onerror)
@@ -219,6 +220,7 @@ Item
                 callbacks[callbackId] = uris[uri] = null
                 requests[++requestId] = { onsuccess: onsuccess, onerror: onerror }
                 sendArgs(type, requestId, callbackId)
+                return requestId
             }
         }
 
@@ -226,6 +228,7 @@ Item
         {
             requests[++requestId] = { onsuccess: onsuccess, onerror: onerror }
             sendArgs(_PUBLISH, requestId, options, uri, args, kwargs)
+            return requestId
         }
 
         function call(uri, options, args, kwargs, callback, onerror)
@@ -233,10 +236,12 @@ Item
             requests[++requestId] = { onerror: onerror }
             results[requestId] = callback
             sendArgs(_ws._CALL, requestId, options, uri, args, kwargs)
+            return requestId
         }
     }
 
     property var open: _ws.open
+    property var authenticate: _ws.authenticate
     property var ping: _ws.ping
     property var close: _ws.close
     property var abort: _ws.abort
