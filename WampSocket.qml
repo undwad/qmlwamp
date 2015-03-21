@@ -30,6 +30,7 @@ Item
     property string sessionId
     property var serverRoles
 
+    signal header(var header)
     signal welcome(var params)
     signal abort(var params)
     signal goodbye(var params)
@@ -93,7 +94,7 @@ Item
             }
         }
 
-        onHeaderReceived: print(header)
+        onHeaderReceived: _.header(header)
 
         onMessageReceived:
         {

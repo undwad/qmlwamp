@@ -20,11 +20,13 @@ Window
         username: 'admin'
         password: 'admin'
 
+        onHeader: print('HEADER', header)
         onWelcome: pprint('WELCOME', params)
         onAbort: pprint('ABORT', params)
         onGoodbye: pprint('GOODBYE', params)
         onError: pprint('ERROR', params)
         onClosed: print('CLOSED')
+
 
         Component.onCompleted: open()
     }
