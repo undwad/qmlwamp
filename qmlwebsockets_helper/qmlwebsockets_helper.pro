@@ -1,5 +1,7 @@
 TEMPLATE = app
 
+CONFIG += c++11
+
 QT += qml quick widgets network
 
 INCLUDEPATH += ./
@@ -16,4 +18,5 @@ QML_IMPORT_PATH =
 include(deployment.pri)
 
 HEADERS += \
-    ../qmlwebsockets/websocketclient.h
+    ../qmlwebsockets/websocketclient.h \
+    ../qmlwebsockets/gunzip.h

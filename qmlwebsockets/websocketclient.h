@@ -20,7 +20,8 @@
 #include <QList>
 #include <QSslError>
 #include <QDebug>
-#include <QtZlib/zlib.h>
+
+//#include <gunzip.h>
 
 #define EMIT_ERROR_AND_RETURN(MESSAGE, DETAILS, RESULT) \
     { \
@@ -293,42 +294,6 @@ private:
         socket().write((char*)buffer.data(), buffer.size());
     }
 
-    QByteArray gUncompress(const QByteArray &data)
-    {
-        if (data.size() <= 4) return QByteArray();
-        QByteArray result;
-        int ret;
-        z_stream strm;
-        static const int CHUNK_SIZE = 1024;
-        char out[CHUNK_SIZE];
-        strm.zalloc = Z_NULL;
-        strm.zfree = Z_NULL;
-        strm.opaque = Z_NULL;
-        strm.avail_in = data.size();
-        strm.next_in = (Bytef*)(data.data());
-        ret = inflateInit2(&strm, 15 +  32);
-        if (ret != Z_OK) return QByteArray();
-        do
-        {
-            strm.avail_out = CHUNK_SIZE;
-            strm.next_out = (Bytef*)(out);
-            ret = inflate(&strm, Z_NO_FLUSH);
-            switch (ret)
-            {
-            case Z_NEED_DICT: ret = Z_DATA_ERROR;
-            case Z_STREAM_ERROR:
-            case Z_DATA_ERROR:
-            case Z_MEM_ERROR:
-                (void)inflateEnd(&strm);
-                return QByteArray();
-            }
-            result.append(out, CHUNK_SIZE - strm.avail_out);
-        }
-        while (strm.avail_out == 0);
-        inflateEnd(&strm);
-        return result;
-    }
-
     void parseInputData()
     {
         while (true)
@@ -396,8 +361,14 @@ private:
             {
                 if (ws.mask) for (size_t i = 0; i != ws.N; ++i) _input_data[i+ws.header_size] ^= ws.masking_key[i&0x3];
                 QByteArray message((char*)_input_data.data()+ws.header_size, ws.N);
-                if(_perMessageDeflate) message = gUncompress(message);
-                emit messageReceived(QString::fromUtf8(message));
+                if(_perMessageDeflate)
+                {
+                    //QByteArray decompressed;
+                    //GUnzip::gzipDecompress(message, decompressed);
+                    //emit messageReceived(QString::fromUtf8(decompressed));
+                    emit socketError("compression not supported", "websockets");
+                }
+                else emit messageReceived(QString::fromUtf8(message));
             }
             else if (ws.opcode == wsheader_type::PING)
             {
@@ -509,3 +480,4 @@ private:
     ReadyState _state = ReadyState::CLOSED;
 };
 
+#undef EMIT_ERROR_AND_RETURN
