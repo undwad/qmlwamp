@@ -13,6 +13,7 @@ Item
     property bool dump
     property alias url: _ws.url
     property alias origin: _ws.origin
+    property bool compress
 
     property string realm
 
@@ -39,6 +40,7 @@ Item
     {
         id: _ws
 
+        extensions: compress ? 'permessage-deflate' : ''
         protocol: 'wamp.2.json'
         key: 'x3JJHMbDL1EzLkh9GBhXDw=='
 
@@ -72,6 +74,7 @@ Item
         property var uris: ({})
         property var callbacks: ({})
         property var results: ({})
+        property var cancels: ({})
 
         function sendArgs()
         {
@@ -141,6 +144,7 @@ Item
                     {
                         var request = requests[requestId]
                         callbacks[callbackId] = request.callback
+                        cancels[callbackId] = request.cancel
                         var onsuccess = request.onsuccess
                         requests[requestId] = null
                         if(onsuccess) onsuccess(callbackId)
@@ -189,6 +193,9 @@ Item
                 }
                 case _INTERRUPT:
                 {
+                    var cancelId = msg[1]
+                    var options = msg[2]
+                    if(cancelId in cancels) cancels[cancelId]({ id: cancelId, options: options })
                     break;
                 }
             }
@@ -196,7 +203,7 @@ Item
 
         function authenticate(signature, extra) { sendArgs(_AUTHENTICATE, signature, extra || {}) }
 
-        function enable(type, uri, options, callback, onsuccess, onerror)
+        function enable(type, uri, options, callback, onsuccess, onerror, oncancel)
         {
             requests[++requestId] =
             {
@@ -206,7 +213,8 @@ Item
                     uris[uri] = callbackId
                     if(onsuccess) onsuccess(callbackId)
                 },
-                onerror: onerror
+                onerror: onerror,
+                oncancel: oncancel
             }
             sendArgs(type, requestId, options, uri)
             return requestId
@@ -217,7 +225,7 @@ Item
             if(uri in uris)
             {
                 var callbackId = uris[uri]
-                callbacks[callbackId] = uris[uri] = null
+                cancels[callbackId] = callbacks[callbackId] = uris[uri] = null
                 requests[++requestId] = { onsuccess: onsuccess, onerror: onerror }
                 sendArgs(type, requestId, callbackId)
                 return requestId
@@ -238,6 +246,8 @@ Item
             sendArgs(_ws._CALL, requestId, options, uri, args, kwargs)
             return requestId
         }
+
+        function cancel(id, options) { sendArgs(_ws._CANCEL, id, options) }
     }
 
     property var open: _ws.open
@@ -251,6 +261,7 @@ Item
     property var unregister: _ws.disable.bind(_ws, _ws._UNREGISTER)
     property var publish: _ws.publish
     property var call: _ws.call
+    property var cancel: _ws.cancel
 
     function pprint() { print(Array.prototype.slice.call(arguments).map(JSON.stringify)) }
 }
