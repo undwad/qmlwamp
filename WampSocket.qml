@@ -84,7 +84,7 @@ Item
 
         onStateChanged:
         {
-            print('WS', ['CLOSING', 'CLOSED', 'CONNECTING', 'INITIALIZING', 'OPEN'][state])
+            if(log) print('WS', ['CLOSING', 'CLOSED', 'CONNECTING', 'INITIALIZING', 'OPEN'][state])
             switch(state)
             {
             case WebSocketClient.OPEN: sendArgs(_HELLO, realm, { roles: clientRoles }); break;
