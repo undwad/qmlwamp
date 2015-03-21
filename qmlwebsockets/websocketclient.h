@@ -1,5 +1,10 @@
-#ifndef WEBSOCKETCLIENT_H
-#define WEBSOCKETCLIENT_H
+/*
+** websocket client for qml
+** https://github.com/undwad/qmlwamp mailto:undwad@mail.ru
+** see copyright notice in ./LICENCE
+*/
+
+#pragma once
 
 #include <vector>
 #include <QObject>
@@ -442,6 +447,4 @@ private:
     bool _ignoreSslErrors = true;
     ReadyState _state = ReadyState::CLOSED;
 };
-
-#endif // WEBSOCKETCLIENT_H
 
