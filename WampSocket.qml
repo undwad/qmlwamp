@@ -181,13 +181,14 @@ Item
                     if(resultId in results)
                     {
                         var result = results[resultId]
-                        results[resultId] = null
-                        if(result) result
-                        ({
-                             details: details,
-                             args: args,
-                             kwargs: kwargs,
-                         })
+                        if(result)
+                            if(!result
+                            ({
+                                 details: details,
+                                 args: args,
+                                 kwargs: kwargs,
+                             }))
+                                results[resultId] = null
                     }
                     break;
                 }

@@ -11,6 +11,16 @@ Window
     width: 640
     height: 480
 
+    Timer
+    {
+        id: _timer
+        property int index: 0
+        property int count: 0
+        property var callback
+        running: index < count
+        onTriggered: callback(++index, count)
+    }
+
     WampSocket
     {
         id: _ws
@@ -95,7 +105,10 @@ Window
                     function(params)
                     {
                         pprint(text, 'INVOKE', params)
-                        params.yield({}, params.args, params.kwargs)
+                        _timer.callback = function(index, count){ params.yield({}, [index, index < count], params.kwargs) }
+                        _timer.count = params.args[0] || 1
+                        _timer.interval = params.args[1] || 1000
+                        _timer.index = 0
                     },
                     pprint.bind(null, text, 'SUCCEEDED'),
                     pprint.bind(null, text, 'FAILED')
@@ -118,9 +131,13 @@ Window
                 (
                     _procedure.text,
                     {},
-                    [1,2,3],
+                    [1],
                     {param1: true, param2: 'joder'},
-                    pprint.bind(null, text, 'RESULT'),
+                    function(params)
+                    {
+                        pprint(text, 'RESULT', params)
+                        return params.args[1]
+                    },
                     pprint.bind(null, text, 'FAILED')
                 )
             }
