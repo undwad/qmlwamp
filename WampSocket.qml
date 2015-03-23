@@ -36,6 +36,13 @@ Item
     signal error(var params)
     signal closed()
 
+    WorkerScript
+    {
+        id: _worker
+        source: "WampSocket.js"
+        onMessage: _ws.parsed(messageObject)
+    }
+
     WebSocketClient
     {
         id: _ws
@@ -97,10 +104,10 @@ Item
 
         onHeaderReceived: _.header(header)
 
-        onMessageReceived:
+        onMessageReceived: _worker.sendMessage({dump: dump, text: text})
+
+        function parsed(msg)
         {
-            if(dump) print('>>>', text)
-            var msg = JSON.parse(text)
             var code = msg[0]
             switch(code)
             {
