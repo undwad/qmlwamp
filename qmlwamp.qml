@@ -47,6 +47,8 @@ Window
         Component.onCompleted: open()
     }
 
+    property var callRequestId
+
     Column
     {
         anchors.right: parent.right
@@ -127,11 +129,11 @@ Window
             Button
             {
                 text: 'CALL'
-                onClicked: _ws.call
+                onClicked: callRequestId = _ws.call
                 (
                     _procedure.text,
                     {},
-                    [1],
+                    [1, 2000],
                     {param1: true, param2: 'joder'},
                     function(params)
                     {
@@ -141,7 +143,11 @@ Window
                     pprint.bind(null, text, 'FAILED')
                 )
             }
-
+            Button
+            {
+                text: 'CANCEL'
+                onClicked: _ws.cancel(callRequestId, {})
+            }
         }
         Button { text: 'CLOSE'; onClicked: _ws.close() }
         Button { text: 'ABORT'; onClicked: _ws.abort() }
