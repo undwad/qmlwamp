@@ -2,5 +2,6 @@
     <qresource prefix="/">
         <file>../qmlwamp.qml</file>
         <file>../WampSocket.qml</file>
+        <file>../WampSocket.js</file>
     </qresource>
 </RCC>

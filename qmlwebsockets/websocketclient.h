@@ -364,7 +364,7 @@ private:
                 if(_perMessageDeflate)
                 {
                     //QByteArray decompressed;
-                    //GUnzip::gzipDecompress(message, decompressed);
+                    //GUnzip::decompress(message, decompressed);
                     //emit messageReceived(QString::fromUtf8(decompressed));
                     emit socketError("compression not supported", "websockets");
                 }
