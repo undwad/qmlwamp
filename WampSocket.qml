@@ -211,7 +211,7 @@ Item
                     }
                 }
             }
-            else if(msg.error) error({ message: msg.error, details: 'JSON' })
+            else if(msg.exception) error({ message: msg.exception.message, details: 'JSON' })
         }
 
         function authenticate(signature, extra) { sendArgs(_AUTHENTICATE, signature, extra || {}) }
