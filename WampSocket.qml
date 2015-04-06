@@ -39,7 +39,7 @@ Item
     WorkerScript
     {
         id: _worker
-        source: "WampSocket.js"
+        source: "AsyncJSONParser.js"
         onMessage: _ws.parsed(messageObject)
     }
 
