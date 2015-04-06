@@ -9,5 +9,6 @@ WorkerScript.onMessage = function(msg)
     {
         msg.exception = e
     }
+    msg.text = null
     WorkerScript.sendMessage(msg)
 }
