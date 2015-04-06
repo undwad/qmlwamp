@@ -108,105 +108,110 @@ Item
 
         function parsed(msg)
         {
-            var code = msg[0]
-            switch(code)
+            if(msg.result)
             {
-                case _WELCOME:
+                msg = msg.result
+                var code = msg[0]
+                switch(code)
                 {
-                    sessionId = msg[1]
-                    var details = msg[2]
-                    serverRoles = details.roles
-                    welcome({ id: sessionId, details: details })
-                    break;
-                }
-                case _ABORT: abort({ details: msg[1], reason: msg[2] }); break;
-                case _CHALLENGE: challenge({ method: msg[1], extra: msg[2] }); break;
-                case _GOODBYE: goodbye({ details: msg[1], reason: msg[2] }); break;
-                case _ERROR:
-                {
-                    var type = msg[1]
-                    var requestId = msg[2]
-                    var details = msg[3]
-                    var error = msg[4]
-                    var args = msg[5]
-                    var kwargs = msg[6]
-                    results[requestId] = null
-                    if(requestId in requests)
+                    case _WELCOME:
                     {
-                        var onerror = requests[requestId].onerror
-                        requests[requestId] = null
-                        if(onerror) onerror({ details: details, error: error, args: args, kwargs: kwargs })
+                        sessionId = msg[1]
+                        var details = msg[2]
+                        serverRoles = details.roles
+                        welcome({ id: sessionId, details: details })
+                        break;
                     }
-                    break
-                }
-                case _REGISTERED:
-                case _SUBSCRIBED:
-                case _PUBLISHED:
-                case _UNSUBSCRIBED:
-                case _UNREGISTERED:
-                {
-                    var requestId = msg[1]
-                    var callbackId = msg[2]
-                    if(requestId in requests)
+                    case _ABORT: abort({ details: msg[1], reason: msg[2] }); break;
+                    case _CHALLENGE: challenge({ method: msg[1], extra: msg[2] }); break;
+                    case _GOODBYE: goodbye({ details: msg[1], reason: msg[2] }); break;
+                    case _ERROR:
                     {
-                        var request = requests[requestId]
-                        callbacks[callbackId] = request.callback
-                        cancels[callbackId] = request.cancel
-                        var onsuccess = request.onsuccess
-                        requests[requestId] = null
-                        if(onsuccess) onsuccess(callbackId)
+                        var type = msg[1]
+                        var requestId = msg[2]
+                        var details = msg[3]
+                        var error = msg[4]
+                        var args = msg[5]
+                        var kwargs = msg[6]
+                        results[requestId] = null
+                        if(requestId in requests)
+                        {
+                            var onerror = requests[requestId].onerror
+                            requests[requestId] = null
+                            if(onerror) onerror({ details: details, error: error, args: args, kwargs: kwargs })
+                        }
+                        break
                     }
-                    break;
-                }
-                case _EVENT:
-                case _INVOCATION:
-                {
-                    var callbackId = msg[1]
-                    var responseId = msg[2]
-                    var details = msg[3]
-                    var args = msg[4]
-                    var kwargs = msg[5]
-                    if(_INVOCATION === code) var temp = callbackId, callbackId = responseId, responseId = temp
-                    if(callbackId in callbacks)
-                        callbacks[callbackId]
-                        ({
-                             id: responseId,
-                             details: details,
-                             args: args,
-                             kwargs: kwargs,
-                             yield: _INVOCATION === code ? sendArgs.bind(_ws, _YIELD, responseId) : null
-                         })
-                    break;
-                }
-                case _RESULT:
-                {
-                    var resultId = msg[1]
-                    var details = msg[2]
-                    var args = msg[3]
-                    var kwargs = msg[4]
-                    requests[resultId] = null
-                    if(resultId in results)
+                    case _REGISTERED:
+                    case _SUBSCRIBED:
+                    case _PUBLISHED:
+                    case _UNSUBSCRIBED:
+                    case _UNREGISTERED:
                     {
-                        var result = results[resultId]
-                        if(result)
-                            if(!result
+                        var requestId = msg[1]
+                        var callbackId = msg[2]
+                        if(requestId in requests)
+                        {
+                            var request = requests[requestId]
+                            callbacks[callbackId] = request.callback
+                            cancels[callbackId] = request.cancel
+                            var onsuccess = request.onsuccess
+                            requests[requestId] = null
+                            if(onsuccess) onsuccess(callbackId)
+                        }
+                        break;
+                    }
+                    case _EVENT:
+                    case _INVOCATION:
+                    {
+                        var callbackId = msg[1]
+                        var responseId = msg[2]
+                        var details = msg[3]
+                        var args = msg[4]
+                        var kwargs = msg[5]
+                        if(_INVOCATION === code) var temp = callbackId, callbackId = responseId, responseId = temp
+                        if(callbackId in callbacks)
+                            callbacks[callbackId]
                             ({
+                                 id: responseId,
                                  details: details,
                                  args: args,
                                  kwargs: kwargs,
-                             }))
-                                results[resultId] = null
+                                 yield: _INVOCATION === code ? sendArgs.bind(_ws, _YIELD, responseId) : null
+                             })
+                        break;
                     }
-                    break;
-                }
-                case _INTERRUPT:
-                {
-                    var cancelId = msg[1]
-                    var options = msg[2]
-                    if(cancelId in cancels) cancels[cancelId]({ id: cancelId, options: options })
-                    break;
+                    case _RESULT:
+                    {
+                        var resultId = msg[1]
+                        var details = msg[2]
+                        var args = msg[3]
+                        var kwargs = msg[4]
+                        requests[resultId] = null
+                        if(resultId in results)
+                        {
+                            var result = results[resultId]
+                            if(result)
+                                if(!result
+                                ({
+                                     details: details,
+                                     args: args,
+                                     kwargs: kwargs,
+                                 }))
+                                    results[resultId] = null
+                        }
+                        break;
+                    }
+                    case _INTERRUPT:
+                    {
+                        var cancelId = msg[1]
+                        var options = msg[2]
+                        if(cancelId in cancels) cancels[cancelId]({ id: cancelId, options: options })
+                        break;
+                    }
                 }
             }
+            else if(msg.error) error({ message: msg.error, details: 'JSON' })
         }
 
         function authenticate(signature, extra) { sendArgs(_AUTHENTICATE, signature, extra || {}) }
