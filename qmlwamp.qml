@@ -157,7 +157,11 @@ Window
                                { disclose_me: true },
                                ['integraplanetearth', 'ipe.getfeatures', ['BOX3D(50.1314 53.2001, 50.1216 53.2099)', 1]],
                                null,
-                               pprint,
+                               function(params)
+                               {
+                                   print(typeof params.args)
+
+                               },
                                pprint
                            )
             }
