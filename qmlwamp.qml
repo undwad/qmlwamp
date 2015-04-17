@@ -25,7 +25,7 @@ Window
     {
         id: _ws
         dump: true
-        url: 'ws://192.168.10.84:8080/ws'
+        url: 'ws://192.168.10.21:7000/ws'
         realm: 'integra-s'
         //compress: true
         property string username: 'admin'
@@ -147,6 +147,19 @@ Window
             {
                 text: 'CANCEL'
                 onClicked: _ws.cancel(callRequestId, {})
+            }
+            Button
+            {
+                text: 'TEST'
+                onClicked: _ws.call
+                           (
+                               'com.integra.callproc',
+                               { disclose_me: true },
+                               ['integraplanetearth', 'ipe.getfeatures', ['BOX3D(50.1314 53.2001, 50.1216 53.2099)', 1]],
+                               null,
+                               pprint,
+                               pprint
+                           )
             }
         }
         Button { text: 'CLOSE'; onClicked: _ws.close() }
