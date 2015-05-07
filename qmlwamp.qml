@@ -45,6 +45,8 @@ Window
 
 
         Component.onCompleted: open()
+
+        onRequestingChanged: print('REQUESTING', requesting)
     }
 
     property var callRequestId

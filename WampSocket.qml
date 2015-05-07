@@ -27,6 +27,7 @@ Item
 
     property string sessionId
     property var serverRoles
+    property bool requesting
 
     signal header(var header)
     signal challenge(var params)
@@ -88,6 +89,7 @@ Item
             var msg = JSON.stringify(Array.prototype.slice.call(arguments).filter(function(arg) { return arg }))
             if(dump) print('<<<', msg)
             send(msg)
+            _.requesting = isRequesting()
         }
 
         onSocketError: error({ message: message, details: details })
@@ -105,6 +107,13 @@ Item
         onHeaderReceived: _.header(header)
 
         onMessageReceived: _worker.sendMessage({dump: dump, text: text})
+
+        function isRequesting()
+        {
+            for(var i in requests)
+                return true
+            return false
+        }
 
         function parsed(msg)
         {
@@ -133,11 +142,11 @@ Item
                         var error = msg[4]
                         var args = msg[5]
                         var kwargs = msg[6]
-                        results[requestId] = null
+                        delete results[requestId]
                         if(requestId in requests)
                         {
                             var onerror = requests[requestId].onerror
-                            requests[requestId] = null
+                            delete requests[requestId]
                             if(onerror) onerror({ details: details, error: error, args: args, kwargs: kwargs })
                         }
                         break
@@ -156,7 +165,7 @@ Item
                             callbacks[callbackId] = request.callback
                             cancels[callbackId] = request.cancel
                             var onsuccess = request.onsuccess
-                            requests[requestId] = null
+                            delete requests[requestId]
                             if(onsuccess) onsuccess(callbackId)
                         }
                         break;
@@ -187,7 +196,7 @@ Item
                         var details = msg[2]
                         var args = msg[3]
                         var kwargs = msg[4]
-                        requests[resultId] = null
+                        delete requests[resultId]
                         if(resultId in results)
                         {
                             var result = results[resultId]
@@ -198,7 +207,7 @@ Item
                                      args: args,
                                      kwargs: kwargs,
                                  }))
-                                    results[resultId] = null
+                                    delete results[resultId]
                         }
                         break;
                     }
@@ -210,6 +219,7 @@ Item
                         break;
                     }
                 }
+                _.requesting = isRequesting()
             }
             else if(msg.exception) error({ message: msg.exception.message, details: 'JSON' })
         }
@@ -238,7 +248,9 @@ Item
             if(uri in uris)
             {
                 var callbackId = uris[uri]
-                cancels[callbackId] = callbacks[callbackId] = uris[uri] = null
+                delete cancels[callbackId]
+                delete callbacks[callbackId]
+                delete uris[uri]
                 requests[++requestId] = { onsuccess: onsuccess, onerror: onerror }
                 sendArgs(type, requestId, callbackId)
                 return requestId
